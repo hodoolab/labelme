@@ -2,6 +2,7 @@ import base64
 import io
 import json
 import os.path as osp
+import os
 
 import PIL.Image
 
@@ -11,6 +12,9 @@ from labelme import PY2
 from labelme import QT4
 from labelme import utils
 
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.draw import polygon
 
 PIL.Image.MAX_IMAGE_PIXELS = None
 
@@ -157,10 +161,12 @@ class LabelFile(object):
         imagePath,
         imageHeight,
         imageWidth,
+        labelList,
         imageData=None,
         otherData=None,
         flags=None,
     ):
+
         if imageData is not None:
             imageData = base64.b64encode(imageData).decode('utf-8')
             imageHeight, imageWidth = self._check_image_height_and_width(
@@ -175,13 +181,39 @@ class LabelFile(object):
             flags=flags,
             shapes=shapes,
             imagePath=imagePath,
-            imageData=imageData,
             imageHeight=imageHeight,
             imageWidth=imageWidth,
+            imageData=imageData
         )
         for key, value in otherData.items():
             assert key not in data
             data[key] = value
+
+        p, fn = filename.split('/')[:-2], filename.split('/')[-1]
+        savepath = '/'.join(p + ['Annotation'])
+        if not os.path.exists(savepath):
+            os.mkdir(savepath)
+
+        image_filename = savepath + '/' + fn[:-5] + '.png'
+
+        label_shape = [data['imageHeight'], data['imageWidth']]
+        label = np.zeros(label_shape, dtype=np.uint8)
+
+        for shape in data['shapes']:
+            if shape['shape_type'] == 'polygon':
+                nodes = np.array(shape['points'])
+                w = nodes[:, 1]
+                h = nodes[:, 0]
+                ww, hh = polygon(w, h)
+                num = labelList.index(shape['label']) + 1
+                label[ww, hh] = num
+        img_save = PIL.Image.fromarray(label)
+
+        try:
+            img_save.save(image_filename)
+        except Exception as e:
+            raise LabelFileError(e)
+
         try:
             with open(filename, 'wb' if PY2 else 'w') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)

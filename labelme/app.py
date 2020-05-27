@@ -657,6 +657,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # if self.firstStart:
         #    QWhatsThis.enterWhatsThisMode()
 
+    def get_labels(self):
+        labelList = list()
+        for i in range(self.uniqLabelList.count()):
+            label_i = self.uniqLabelList.item(i).data(Qt.UserRole)
+            labelList.append(label_i)
+        return labelList
+
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
         if actions:
@@ -1088,6 +1095,8 @@ class MainWindow(QtWidgets.QMainWindow):
             imageData = self.imageData if self._config['store_data'] else None
             if osp.dirname(filename) and not osp.exists(osp.dirname(filename)):
                 os.makedirs(osp.dirname(filename))
+
+            filename = filename.replace('\\', '/')
             lf.save(
                 filename=filename,
                 shapes=shapes,
@@ -1097,6 +1106,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 imageWidth=self.image.width(),
                 otherData=self.otherData,
                 flags=flags,
+                labelList=self.get_labels()
             )
             self.labelFile = lf
             items = self.fileListWidget.findItems(
