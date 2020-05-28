@@ -190,7 +190,7 @@ class LabelFile(object):
             data[key] = value
 
         p, fn = filename.split('/')[:-2], filename.split('/')[-1]
-        savepath = '/'.join(p + ['Annotation'])
+        savepath = '/'.join(p + ['Annotations'])
         if not os.path.exists(savepath):
             os.mkdir(savepath)
 
